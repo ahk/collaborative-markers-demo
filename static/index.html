@@ -102,6 +102,11 @@ map.on('load', async function() {
             "circle-color": "red"
         }
     });
+
+    const updateInterval = setInterval(async () => {
+        console.log('Polling for circle data ...');
+        await updateMapFromServer();
+    }, 500)
 });
 
 </script>
