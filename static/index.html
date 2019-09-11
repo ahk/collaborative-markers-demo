@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mapbox GL JS debug page</title>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel='stylesheet' href='mapbox-gl.css' />
+    <style>
+        body { margin: 0; padding: 0; }
+        html, body, #map { height: 100%; }
+    </style>
+</head>
+
+<body>
+<div id='map'></div>
+
+<script src='mapbox-gl-dev.js'></script>
+<script src='access_token_generated.js'></script>
+<script>
+
+const map = window.map = new mapboxgl.Map({
+    container: 'map',
+    zoom: 12.5,
+    center: [-77.01866, 38.888],
+    style: 'mapbox://styles/mapbox/streets-v10',
+    hash: true
+});
+
+map.on('load', async function() {
+    // The name of our circle data source for our map
+    const circleSourceName = "circleSource";
+
+    // Variable for storing our geojson data for circles
+    const geoJsonCircles = await getGeoJsonCircles();
+
+    function featureFromLngLat(lngLat) {
+        return {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lngLat.lng, lngLat.lat]
+            }
+        };
+    }
+
+    function addCircleToMap(lngLat) {
+        geoJsonCircles["features"].push(featureFromLngLat(lngLat));
+        map.getSource(circleSourceName).setData(geoJsonCircles);
+    }
+
+    async function sendCircleToServer(lngLat) {
+        const url = '/circles';
+
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(lngLat)
+        });
+    }
+
+    async function getGeoJsonCircles() {
+        const url = '/circles';
+
+        const circleLngLats = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(async (response) => {
+            return await response.json();
+        })
+
+        const geoJsonCircles = {
+            "type": "FeatureCollection",
+            "features": []
+        };
+
+        circleLngLats.forEach((lngLat) => {
+            geoJsonCircles["features"].push(featureFromLngLat(lngLat));
+        })
+
+        return geoJsonCircles;
+    }
+
+    map.on('click', async function(event) {
+        const lngLat = event.lngLat;
+        await sendCircleToServer(lngLat);
+        addCircleToMap(lngLat)
+    });
+
+    map.addSource(circleSourceName, {
+        "type": "geojson",
+        "data": geoJsonCircles
+    });
+
+    map.addLayer({
+        "id": "circles",
+        "type": "circle",
+        "source": circleSourceName,
+        "paint": {
+            "circle-radius": 10,
+            "circle-color": "red"
+        }
+    });
+});
+
+</script>
+</body>
+</html>
