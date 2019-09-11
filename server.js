@@ -8,12 +8,12 @@ const circlesFileName = 'circles.json';
 
 async function readFileAsync(file) {
     const wrapPromise = new Promise((resolve, reject) => {
-        fs.readFile(file, (error) => {
+        fs.readFile(file, (error, data) => {
             if (error) {
                 reject(error);
             }
             else {
-                resolve();
+                resolve(data);
             }
         });
     });
