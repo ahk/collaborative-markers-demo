@@ -30,9 +30,6 @@ map.on('load', async function() {
     // The name of our circle data source for our map
     const circleSourceName = "circleSource";
 
-    // Variable for storing our geojson data for circles
-    const geoJsonCircles = await getGeoJsonCircles();
-
     function featureFromLngLat(lngLat) {
         return {
             "type": "Feature",
@@ -41,11 +38,6 @@ map.on('load', async function() {
                 "coordinates": [lngLat.lng, lngLat.lat]
             }
         };
-    }
-
-    function addCircleToMap(lngLat) {
-        geoJsonCircles["features"].push(featureFromLngLat(lngLat));
-        map.getSource(circleSourceName).setData(geoJsonCircles);
     }
 
     async function sendCircleToServer(lngLat) {
@@ -60,7 +52,7 @@ map.on('load', async function() {
         });
     }
 
-    async function getGeoJsonCircles() {
+    async function getCirclesFromServer() {
         const url = '/circles';
 
         const circleLngLats = await fetch(url, {
@@ -85,15 +77,20 @@ map.on('load', async function() {
         return geoJsonCircles;
     }
 
+    async function updateMapFromServer() {
+        const circleData = await getCirclesFromServer();
+        map.getSource(circleSourceName).setData(circleData);
+    }
+
     map.on('click', async function(event) {
         const lngLat = event.lngLat;
         await sendCircleToServer(lngLat);
-        addCircleToMap(lngLat)
+        await updateMapFromServer();
     });
 
     map.addSource(circleSourceName, {
         "type": "geojson",
-        "data": geoJsonCircles
+        "data": await getCirclesFromServer()
     });
 
     map.addLayer({
