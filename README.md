@@ -1,3 +1,3 @@
-Copy `access_token_generated.js` from `mapbox-gl-js/debug` folder to `static` folder.
+Edit `static/access_token.js` and add your mapbox access token
 `yarn install`
 `yarn start`
